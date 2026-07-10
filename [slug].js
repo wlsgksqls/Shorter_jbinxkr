@@ -15,8 +15,14 @@ export async function onRequest(context) {
     );
   }
 
+  // Decode slug for Korean support
+  let decodedSlug = slug;
+  try {
+    decodedSlug = decodeURIComponent(slug);
+  } catch (_) {}
+
   // Retrieve destination URL from KV
-  const destinationUrl = await env.SHORTENER_KV.get(slug);
+  const destinationUrl = await env.SHORTENER_KV.get(decodedSlug);
 
   if (destinationUrl) {
     // 302 Redirect to destination

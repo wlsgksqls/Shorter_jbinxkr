@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('jbinx.kr URL Shortener - App version 1.2 loaded');
+  console.log('jbinx.kr URL Shortener - App version 1.4 loaded');
   // DOM Elements
   const form = document.getElementById('shorten-form');
   const destUrlInput = document.getElementById('dest-url');
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const errorSlug = urlParams.get('slug');
   
   if (errorParam === 'not-found' && errorSlug) {
-    showToast(`단축 링크 '${decodeURIComponent(errorSlug)}'을(를) 찾을 수 없습니다. 원래 링크가 존재하지 않거나 만료되었습니다.`, true);
+    showToast(`앗! '${decodeURIComponent(errorSlug)}' 주소는 찾을 수 없어요. 주소가 틀렸거나 삭제되었을 수 있어요. 😢`, true);
     // Clear query parameter from URL bar without refreshing
     window.history.replaceState({}, document.title, window.location.pathname);
   }
@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
           previewSlug.textContent = '이름';
           previewSlug.classList.add('preview-placeholder');
           
-          showToast('🎉 단축 링크가 성공적으로 등록되었습니다!');
+          showToast('🎉 멋진 단축 주소가 만들어졌어요!');
         } else {
           // Handle server errors (e.g. KV not bound or duplicate)
           showToast(result.error || `서버 오류 (${response.status})`, true);
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event) event.preventDefault();
     
     navigator.clipboard.writeText(text).then(() => {
-      showToast('📋 단축 주소가 클립보드에 복사되었습니다!');
+      showToast('📋 주소가 복사되었어요! 이제 친구들에게 보내보세요! 🚀');
     }).catch(err => {
       console.error('Copy failed:', err);
       // Fallback
@@ -221,9 +221,9 @@ document.addEventListener('DOMContentLoaded', () => {
       textArea.select();
       try {
         document.execCommand('copy');
-        showToast('📋 단축 주소가 클립보드에 복사되었습니다!');
+        showToast('📋 주소가 복사되었어요! 이제 친구들에게 보내보세요! 🚀');
       } catch (e) {
-        showToast('클립보드 복사에 실패했습니다.', true);
+        showToast('복사에 실패했어요.', true);
       }
       document.body.removeChild(textArea);
     });
@@ -251,12 +251,32 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('jbinx_recent_links', JSON.stringify(filteredLinks));
   }
 
-  window.deleteLink = function(slug) {
-    const links = getRecentLinks();
-    const filtered = links.filter(link => link.slug !== slug);
-    localStorage.setItem('jbinx_recent_links', JSON.stringify(filtered));
-    renderRecentLinks();
-    showToast('목록에서 링크가 삭제되었습니다.');
+  window.deleteLink = async function(slug) {
+    try {
+      // Send DELETE request to Cloudflare KV
+      const response = await fetch(`/shorten?slug=${encodeURIComponent(slug)}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        const links = getRecentLinks();
+        const filtered = links.filter(link => link.slug !== slug);
+        localStorage.setItem('jbinx_recent_links', JSON.stringify(filtered));
+        renderRecentLinks();
+        showToast('서버와 목록에서 주소를 완전히 지웠어요! 🗑️');
+      } else {
+        const result = await response.json();
+        showToast(result.error || '주소 삭제에 실패했습니다.', true);
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      // Fallback: Delete locally anyway, but notify
+      const links = getRecentLinks();
+      const filtered = links.filter(link => link.slug !== slug);
+      localStorage.setItem('jbinx_recent_links', JSON.stringify(filtered));
+      renderRecentLinks();
+      showToast('통신 오류로 서버에서는 지우지 못했지만, 목록에서는 지웠어요.', true);
+    }
   };
 
   function renderRecentLinks() {
@@ -264,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (links.length === 0) {
       linksList.innerHTML = `
-        <p class="text-center body-sm" style="padding: var(--space-xl) 0; color: var(--color-stone);">생성된 단축 링크가 없습니다. 위 폼을 통해 링크를 단축해 보세요!</p>
+        <p class="text-center body-sm" style="padding: var(--space-xl) 0; color: var(--color-stone);">아직 만든 주소가 없어요. 왼쪽에서 첫 단축 주소를 만들어 보세요! 😊</p>
       `;
       return;
     }
