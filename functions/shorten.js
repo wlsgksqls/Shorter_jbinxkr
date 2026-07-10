@@ -86,6 +86,7 @@ export async function onRequestPost(context) {
         headers: { "Content-Type": "application/json" } 
       }
     );
+  }
 }
 
 export async function onRequestDelete(context) {
