@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('jbinx.kr URL Shortener - App version 1.4 loaded');
+  console.log('jbinx.kr URL Shortener - App version 1.5 loaded');
   // DOM Elements
   const form = document.getElementById('shorten-form');
   const destUrlInput = document.getElementById('dest-url');
@@ -36,13 +36,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Real-time Slug Preview & Sanitization
   customSlugInput.addEventListener('input', (e) => {
-    let value = e.target.value;
+    const value = e.target.value;
     
-    // Sanitize input: allow alphabetic, numeric, hyphen, underscore, and Korean
-    const sanitized = value.replace(/[^a-zA-Z0-9-_\u3131-\uD79D]/g, '');
-    if (value !== sanitized) {
-      e.target.value = sanitized;
-      value = sanitized;
+    // Validate character sets without force-replacing value (to prevent breaking Korean composition/IME)
+    const isValidSlug = /^[a-zA-Z0-9-_\uAC00-\uD7A3\u3130-\u318F]*$/.test(value);
+    if (!isValidSlug) {
       showInputError(customSlugInput, slugErrorMsg, true);
     } else {
       showInputError(customSlugInput, slugErrorMsg, false);
